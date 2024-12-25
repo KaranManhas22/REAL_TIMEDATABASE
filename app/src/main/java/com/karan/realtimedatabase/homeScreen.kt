@@ -9,9 +9,13 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.core.view.ViewCompat
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -90,6 +94,9 @@ class homeScreen : Fragment(), Recycler_btn {
             }
 
         })
+
+
+
     }
 
     override fun onCreateView(
@@ -132,6 +139,7 @@ class homeScreen : Fragment(), Recycler_btn {
                                 Toast.makeText(requireContext(), "Failed", Toast.LENGTH_SHORT)
                                     .show()
                             }
+
 
                         recyclerAdapter.notifyDataSetChanged()
                         dismiss()
@@ -206,4 +214,6 @@ class homeScreen : Fragment(), Recycler_btn {
         bundle.putString("number", array[position].number.toString().toInt().toString())
         findNavController().navigate(R.id.action_homeScreen_to_detail_screen, bundle)
     }
+
+
 }

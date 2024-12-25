@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.NonDisposableHandle
@@ -41,6 +42,5 @@ class recyclerAdapter(var array: ArrayList<Items>, private var recyclerBtn: Recy
         holder.name.setOnClickListener {
             recyclerBtn.click(currentItem,position)
         }
-
     }
 }

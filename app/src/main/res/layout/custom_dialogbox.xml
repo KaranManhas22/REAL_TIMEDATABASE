@@ -58,6 +58,12 @@
             android:hint="Enter the number"
             />
     </LinearLayout>
+    <ImageView
+        android:id="@+id/setImage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_launcher_background"
+        android:layout_margin="10dp"/>
     <Button
         android:id="@+id/btn_save"
         android:layout_width="wrap_content"
