@@ -1,5 +1,6 @@
 package com.karan.realtimedatabase
 
+import android.Manifest
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Bundle
@@ -10,6 +11,8 @@ import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.navDeepLink
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -33,7 +36,7 @@ class detail_screen : Fragment() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var Location_Permission_Request_Code = 1000
-    var pgbar: ProgressBar? = null
+    var pgbar: ProgressBar?=null
     private var name: String? = null
     private var ClassEt: String? = null
     private var number: String? = null
@@ -41,7 +44,16 @@ class detail_screen : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        binding = FragmentDetailScreenBinding.inflate(layoutInflater)
+        binding=FragmentDetailScreenBinding.inflate(layoutInflater)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
+
+
+        binding.progreassBar
+        if (checkPermission()) {
+            getLastLocation()
+        } else {
+            requestPermission()
+        }
         // Inflate the layout for this fragment
         return binding.root
     }
@@ -53,13 +65,7 @@ class detail_screen : Fragment() {
             ClassEt = it.getString("class") ?: ""
             number = it.getString("number") ?: ""
         }
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
-        binding.progreassBar
-        if (checkPermission()) {
-            getLastLocation()
-        } else {
-            requestPermission()
-        }
+
     }
 
     private fun checkPermission(): Boolean {
@@ -100,6 +106,40 @@ class detail_screen : Fragment() {
             }
         }
     }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        binding.detailName.setText(name)
+        binding.detailClass.setText(ClassEt)
+        binding.detailNumber.setText(number)
+        if (ActivityCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return
+        }
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            binding.progreassBar?.visibility = View.GONE
+            if (location != null) {
+                var userLong = location.longitude
+                var userLat = location.latitude
+                var address = getCompleteAddressString(userLat, userLong)
+                binding.Location?.setText(address)
+                binding.Latitude?.setText(userLat.toString())
+                binding.Longitude?.setText(userLong.toString())
+            }
+        }
+    }
 
     private fun getLastLocation() {
         binding.progreassBar?.visibility = View.VISIBLE
@@ -113,17 +153,7 @@ class detail_screen : Fragment() {
         ) {
             return
         }
-        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-            binding.progreassBar?.visibility = View.GONE
-            if (location != null) {
-                var userLong = location.longitude
-                var userLat = location.latitude
-                var address = getCompleteAddressString(userLong, userLat)
-                binding.Location?.setText(address)
-                binding.Latitude?.setText(userLat.toString())
-                binding.Longitude?.setText(userLong.toString())
-            }
-        }
+
     }
 
     private fun getCompleteAddressString(LATITUDE: Double, LONGITUDE: Double): String {
@@ -151,15 +181,7 @@ class detail_screen : Fragment() {
     }
 
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
 
-        binding.detailName.setText(name)
-        binding.detailClass.setText(ClassEt)
-        binding.detailNumber.setText(number)
-
-
-    }
 
     companion object {
         /**
