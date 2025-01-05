@@ -1,16 +1,31 @@
 package com.karan.realtimedatabase
 
+import android.Manifest
+import android.app.Activity
 import android.app.AlertDialog
 import android.app.Dialog
 import android.app.ProgressDialog.show
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.nfc.Tag
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
+import android.provider.Settings
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.cardview.widget.CardView
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContentProviderCompat.requireContext
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -23,6 +38,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.karan.realtimedatabase.databinding.CustomDialogboxBinding
 import com.karan.realtimedatabase.databinding.FragmentHomeScreenBinding
+import io.github.jan.supabase.SupabaseClient
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -35,10 +51,19 @@ private const val ARG_PARAM2 = "param2"
  * create an instance of this fragment.
  */
 class homeScreen : Fragment(), Recycler_btn {
+
     lateinit var binding: FragmentHomeScreenBinding
-    var dbRefrence: DatabaseReference = FirebaseDatabase.getInstance().reference
+    var dbRefrence: DatabaseReference =
+        FirebaseDatabase.getInstance().reference //database initialization and decleration
     var array = ArrayList<Items>()
     var recyclerAdapter = recyclerAdapter(array, this)
+
+    //Supabase
+
+    var PICK_IMAGE_REQUEST = 1
+    var PERMISSION_REQUEST_CODE = 100
+    var MANAGE_EXTERNAL_STORAGE_REQUEST_CODE = 101
+    lateinit var supabaseClient: SupabaseClient
 
     // TODO: Rename and change types of parameters
     private var param1: String? = null
@@ -50,6 +75,9 @@ class homeScreen : Fragment(), Recycler_btn {
             param1 = it.getString(ARG_PARAM1)
             param2 = it.getString(ARG_PARAM2)
         }
+        supabaseClient = (requireContext() as MyApplication).supabaseClient
+        checkAndRequestPermissions()
+
         dbRefrence.addChildEventListener(object : ChildEventListener {
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
 //                Log.e(TAG,"snapshot ${snapshot.value}")
@@ -62,7 +90,9 @@ class homeScreen : Fragment(), Recycler_btn {
 
             }
 
-            override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+            override fun onChildChanged(
+                snapshot: DataSnapshot, previousChildName: String?
+            ) { //used for update
                 var items: Items? = snapshot.getValue(Items::class.java)
                 items?.id = snapshot.key
                 if (items != null) {
@@ -96,12 +126,92 @@ class homeScreen : Fragment(), Recycler_btn {
         })
 
 
-
     }
 
+    private fun checkAndRequestPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (Environment.isExternalStorageManager()) {
+
+                } else {
+                    requestManageExternalStoragePermission()
+                }
+            } else {
+                if (ContextCompat.checkSelfPermission(
+                        requireContext(), Manifest.permission.MANAGE_EXTERNAL_STORAGE
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    requestManageExternalStoragePermission()
+                }
+            }
+        } else {
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(), android.Manifest.permission.READ_EXTERNAL_STORAGE
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    requireActivity(),
+                    arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
+                    PERMISSION_REQUEST_CODE
+                )
+            }
+        }
+    }
+
+    private fun requestManageExternalStoragePermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                startActivityForResult(intent, PERMISSION_REQUEST_CODE)
+            } catch (e: ActivityNotFoundException) {
+                Toast.makeText(requireContext(), "Activity not found", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            PERMISSION_REQUEST_CODE -> {                          //Android 10 below
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(requireContext(), "Permission granted", Toast.LENGTH_SHORT)
+                        .show()
+                } else {
+                    Toast.makeText(requireContext(), "Permission granted", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+
+            MANAGE_EXTERNAL_STORAGE_REQUEST_CODE -> {             //Android 10 above
+                if (Environment.isExternalStorageManager()) {
+                    Toast.makeText(requireContext(), "Full storage granted", Toast.LENGTH_SHORT)
+                        .show()
+                } else {
+                    Toast.makeText(requireContext(), "Full storage not granted", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+        }
+    }
+
+//    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+//        super.onActivityResult(requestCode, resultCode, data)
+//        Toast.makeText(this, "result code: ${requestCode}", Toast.LENGTH_SHORT).show()
+//        if (resultCode == Activity.RESULT_OK && requestCode == PICK_IMAGE_REQUEST) {
+//            data?.data?.let { uri ->
+//                binding..setImageURI(uri)
+//                uploadImageToSupabase(uri)
+//            }
+//        }
+
+
+
+
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
         binding = FragmentHomeScreenBinding.inflate(layoutInflater)
@@ -114,8 +224,7 @@ class homeScreen : Fragment(), Recycler_btn {
             Dialog(requireContext()).apply {
                 setContentView(dialogboxBinding.root)
                 window?.setLayout(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
                 )
                 dialogboxBinding.btnSave.setOnClickListener {
 
@@ -130,12 +239,20 @@ class homeScreen : Fragment(), Recycler_btn {
                             "",
                             dialogboxBinding.etName.text.toString(),
                             dialogboxBinding.etclass.text.toString(),
-                            dialogboxBinding.etNumber.text.toString().toInt()
+                            dialogboxBinding.etNumber.text.toString().toInt(),
+//                            dialogboxBinding.setImage.background.toString()
+                            dialogboxBinding.setImage.setOnClickListener {
+                                val intent = Intent(
+                                    Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                                )
+                                startActivityForResult(intent, PICK_IMAGE_REQUEST)
+                            }.toString()
+
+
                         )
                         dbRefrence.push().setValue(items).addOnCompleteListener {
                             Toast.makeText(requireContext(), "Menu ADD", Toast.LENGTH_SHORT).show()
-                        }
-                            .addOnFailureListener { err ->
+                        }.addOnFailureListener { err ->
                                 Toast.makeText(requireContext(), "Failed", Toast.LENGTH_SHORT)
                                     .show()
                             }
@@ -145,10 +262,13 @@ class homeScreen : Fragment(), Recycler_btn {
                         dismiss()
                     }
 
+
+                    show()
                 }
-                show()
             }
         }
+
+
         return binding.root
     }
 
@@ -158,8 +278,7 @@ class homeScreen : Fragment(), Recycler_btn {
         val update_dialog = Dialog(requireContext()).apply {
             setContentView(dialogboxBinding.root)
             window?.setLayout(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
             )
             show()
         }
@@ -180,9 +299,7 @@ class homeScreen : Fragment(), Recycler_btn {
             )
             dbRefrence.child(items.id ?: "").setValue(updated_itesms).addOnCompleteListener {
 
-            }
-                .addOnFailureListener {
-                }
+            }.addOnFailureListener {}
 
             recyclerAdapter.notifyDataSetChanged()
             update_dialog.dismiss()
@@ -192,8 +309,7 @@ class homeScreen : Fragment(), Recycler_btn {
     override fun delete_data(items: Items, position: Int) {
         AlertDialog.Builder(requireContext()).apply {
             setTitle("You want to Delete")
-            setPositiveButton("yes")
-            { _, _ ->
+            setPositiveButton("yes") { _, _ ->
                 dbRefrence.child(items.id ?: "").removeValue()
             }
             recyclerAdapter.notifyDataSetChanged()
@@ -203,8 +319,7 @@ class homeScreen : Fragment(), Recycler_btn {
 
             }
             setCancelable(false)
-        }
-            .show()
+        }.show()
     }
 
     override fun click(items: Items, position: Int) {

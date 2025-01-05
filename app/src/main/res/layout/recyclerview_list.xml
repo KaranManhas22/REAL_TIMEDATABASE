@@ -2,20 +2,41 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_margin="5dp"
     android:orientation="vertical"
     android:background="@drawable/search_background"
-    >
 
-    <TextView
-        android:id="@+id/etName"
+    >
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="7dp"
-        android:padding="15dp"
-        android:textStyle="bold"
-        android:textSize="20dp"
-        android:text="list" />
+        android:gravity="center"
+        android:orientation="horizontal">
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/photoUpload"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            app:cardCornerRadius="50dp"
+            app:cardElevation="10dp"
+            android:outlineAmbientShadowColor="@color/black">
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:id="@+id/etName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="7dp"
+            android:padding="15dp"
+            android:textStyle="bold"
+            android:textSize="20dp"
+            android:text="list" />
+    </LinearLayout>
+
 
     <LinearLayout
         android:layout_width="match_parent"

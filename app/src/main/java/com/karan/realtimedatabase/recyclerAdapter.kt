@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.NonDisposableHandle
 import kotlinx.coroutines.NonDisposableHandle.parent
@@ -16,6 +17,7 @@ class recyclerAdapter(var array: ArrayList<Items>, private var recyclerBtn: Recy
         val name: TextView = view.findViewById(R.id.etName)
         val btn_del: Button = view.findViewById(R.id.btn_Delete)
         val btn_update: Button = view.findViewById(R.id.btn_update)
+        val btn_card :CardView=view.findViewById(R.id.photoUpload)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -33,6 +35,7 @@ class recyclerAdapter(var array: ArrayList<Items>, private var recyclerBtn: Recy
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val currentItem = array[position]
         holder.name.text=currentItem.name
+        holder.btn_card.background
         holder.btn_del.setOnClickListener {
             recyclerBtn.delete_data(currentItem, position)
         }
